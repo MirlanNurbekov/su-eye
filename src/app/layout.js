@@ -1,6 +1,7 @@
 // app/layout.js
+
 export const metadata = {
-  title: 'Attendance Web App',
+  title: 'Attendance App',
   description: 'A simple attendance app using Next.js and Firebase',
 };
 

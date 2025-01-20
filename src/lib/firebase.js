@@ -1,8 +1,9 @@
 // lib/firebase.js
+
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
-// Replace these with your actual config values from Firebase
+// Replace with your actual config from Firebase console
 const firebaseConfig = {
   apiKey: "AIzaSyDNNUhJ4uwkXhQG8gHVe-klOZDfNMw-CKM",
   authDomain: "attendance-web-app-d7b6e.firebaseapp.com",
