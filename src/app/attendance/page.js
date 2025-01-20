@@ -1,4 +1,3 @@
-// app/attendance/page.js
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -11,30 +10,29 @@ import {
 } from 'firebase/firestore';
 
 export default function AttendancePage() {
-  // Hard-coded student data
+  // Hard-coded students for demonstration
   const [students, setStudents] = useState([
     { id: 'student1', name: 'Alice', present: false },
     { id: 'student2', name: 'Bob', present: false },
     { id: 'student3', name: 'Charlie', present: false },
   ]);
 
-  // Fetch current attendance status from Firestore on first load
+  // Load current attendance status from Firestore
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
         const snapshot = await getDocs(collection(db, 'attendance'));
-        const updatedStudents = [...students];
+        const updated = [...students];
 
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
-          // docSnap.id should match student.id (e.g., 'student1')
-          const index = updatedStudents.findIndex(s => s.id === docSnap.id);
+          const index = updated.findIndex(s => s.id === docSnap.id);
           if (index !== -1) {
-            updatedStudents[index].present = data.present || false;
+            updated[index].present = data.present || false;
           }
         });
 
-        setStudents(updatedStudents);
+        setStudents(updated);
       } catch (error) {
         console.error("Error fetching attendance:", error);
       }
@@ -43,43 +41,58 @@ export default function AttendancePage() {
     fetchAttendance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
-  // ^ If we include 'students' in dependency array, it might re-fetch repeatedly.
-  // So we only fetch once on mount.
+  // ^ We only want this to run once (on mount).
 
-  // Toggle attendance and save to Firestore
-  const toggleAttendance = async (studentId) => {
+  // Toggle the checkbox in local state
+  const handleCheckboxChange = (id) => {
+    setStudents(prev => 
+      prev.map(s => {
+        if (s.id === id) {
+          return { ...s, present: !s.present };
+        }
+        return s;
+      })
+    );
+  };
+
+  // Submit changes to Firestore (bulk update)
+  const handleSubmit = async () => {
     try {
-      // Update local state quickly for immediate UI change
-      setStudents(prev =>
-        prev.map(s => {
-          if (s.id === studentId) {
-            const newStatus = !s.present;
-            // Also update Firestore
-            setDoc(doc(db, 'attendance', studentId), { present: newStatus });
-            return { ...s, present: newStatus };
-          }
-          return s;
+      // For each student, update Firestore doc
+      // (Alternatively, you could do a batch write, but let's keep it simple.)
+      const promises = students.map(s => 
+        setDoc(doc(db, 'attendance', s.id), {
+          present: s.present
         })
       );
+
+      await Promise.all(promises);
+      alert("Attendance updated!");
     } catch (error) {
       console.error("Error updating attendance:", error);
+      alert("Failed to update attendance. Check console for details.");
     }
   };
 
   return (
     <main style={{ padding: '20px' }}>
-      <h1>Attendance</h1>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {students.map((student) => (
+      <h1>Attendance (Submit Version)</h1>
+      <ul style={{ listStyleType: 'none', padding: 0 }}>
+        {students.map(student => (
           <li key={student.id} style={{ marginBottom: '10px' }}>
-            {student.name} - <b>{student.present ? 'Present' : 'Absent'}</b>
-            {' '}
-            <button onClick={() => toggleAttendance(student.id)}>
-              Toggle
-            </button>
+            <label style={{ cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={student.present}
+                onChange={() => handleCheckboxChange(student.id)}
+                style={{ marginRight: '8px' }}
+              />
+              {student.name}
+            </label>
           </li>
         ))}
       </ul>
+      <button onClick={handleSubmit}>Submit</button>
     </main>
   );
 }
